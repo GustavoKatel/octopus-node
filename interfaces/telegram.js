@@ -510,6 +510,13 @@ class Telegram {
 
     });
 
+    // /help
+    ocu.match(/help$/g, text, (match) => {
+
+      this.bot.sendChatAction(chatId, "typing");
+      this.bot.sendMessage(chatId, this.help());
+    });
+
   } // END INTERPRETER
 
   help() {
