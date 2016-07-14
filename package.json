@@ -1,0 +1,32 @@
+{
+  "name": "octopus-node",
+  "version": "1.0.0",
+  "description": "Manage, control and execute software across slaves through secure shell channels",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GustavoKatel/octopus-node.git"
+  },
+  "keywords": [
+    "ssh",
+    "bot",
+    "slave",
+    "master",
+    "control",
+    "telegram"
+  ],
+  "author": "GustavoKatel",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/GustavoKatel/octopus-node/issues"
+  },
+  "homepage": "https://github.com/GustavoKatel/octopus-node#readme",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.23.3",
+    "ssh2": "^0.5.0"
+  }
+}
