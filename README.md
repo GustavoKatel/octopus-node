@@ -4,13 +4,14 @@
 
 ### 1 - Installation
 
+* Get the code
+
+            git clone https://github.com/GustavoKatel/octopus-node.git
+
 * Dependencies
 
             npm install
 
-* Get the code
-
-            git clone https://github.com/GustavoKatel/octopus-node.git
 
 ### 2 - Create a Telegram bot
 
