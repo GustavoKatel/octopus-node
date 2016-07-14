@@ -106,6 +106,7 @@ class Telegram {
             this.sendQuestion(chatId, `Not valid! ${question}`, callback);
             return;
           } else if(message.text.trim() == "/cancel") {
+            this.sendMessage(chatId, "-.-.-00-.-.-");
             return;
           }
           callback(message.text);
@@ -138,6 +139,9 @@ class Telegram {
             [
               { text: "Add admin", callback_data: "/auth" },
               { text: "Add node", callback_data: "/addNode" }
+            ],
+            [
+              { text: "Download logs", callback_data: "/dumpNode" }
             ],
             [
               { text: "Help", callback_data: "/help" }
@@ -281,7 +285,8 @@ class Telegram {
           fs.readFile(`${this.octopus.nodesDir}/${node.name}.out`, (err, data) => {
             if (err) console.log(err);;
             var res = `Reading logs: ${node.name} -.-.-00-.-.-\n\n`;
-            res += data;
+            console.log(data);
+            res += (`${data}`).substr(Math.max(data.length-400, 0), data.length);
             res += `\nReading logs ends: ${node.name} -.-.-00-.-.-\n\n`;
             this.sendMessage(chatId, res);
           });
@@ -470,6 +475,51 @@ class Telegram {
 
     });
 
+    // /dumpNode
+    ocu.match(/dumpNode$/g, text, (match) => {
+
+      this.bot.sendChatAction(chatId, "typing");
+      this.sendQuestion(chatId, 'Enter the list of nodes (Comma separated)\n* = All nodes\nExample: node1,node2', text => {
+
+        var sText = text.replace(/,\s+/g, ",");
+        ocu.match(/[-\w,\*]+/g, text, (match) => {
+
+          this.sendQuestion(chatId, 'STDOUT or STDERR?', text => {
+            this.interpreter(chatId, `dump ${sText} ${text.toLowerCase()}`);
+          });
+
+        });
+
+      });
+
+    });
+
+    // /dump LIST_OF_NAMES|* STDOUT|STDERR
+    ocu.match(/dump ([a-zA-Z0-9_,]+|\*) (stdout|stderr)/g, text, (match) => {
+
+      var names = match[1].replace(/,\s+/g, ",").split(",");
+      var dumpType = match[2];
+
+      var all = names.indexOf("*")>=0;
+      this.octopus.nodes.forEach((node, index) => {
+
+        if(all || names.indexOf(node.name)>=0) {
+
+          this.bot.sendChatAction(chatId, "upload_document");
+          this.sendMessage(chatId, `Uploading ${dumpType} from ${node.name}...`);
+          var ext = (dumpType == "stdout" ? "out" : "err");
+          var src = `${this.octopus.nodesDir}/${node.name}.${ext}`;
+          this.bot.sendDocument(chatId, src, {
+            caption: `${dumpType} from ${node.name}`
+          });
+
+        }
+
+      });
+
+    });
+
+
     // /help
     ocu.match(/help$/g, text, (match) => {
 
@@ -501,6 +551,10 @@ Commands:
 /addNode: Add a new node to the network
 
 /kill LIST_OF_NAMES|* ID: Kill process ID from the nodes in LIST_OF_NAMES
+
+/dump LIST_OF_NAMES|* STDOUT|STDERR: Download the stdout or the stderr from a node
+
+/cancel: Cancel the current flow
     `;
   }
 
