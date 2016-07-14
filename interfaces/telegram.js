@@ -13,12 +13,14 @@ class Telegram {
     this.octopus = octopus;
     this.bot = new TelegramBot(octopus.conf.telegram.token, {polling: true});
 
+    this.defaultSendOptions = { };
+
     this.bot.on('callback_query', (message) => {
 
       var chatId = message.message.chat.id;
 
       if(this.octopus.conf.telegram.admins.indexOf(message.from.username)<0) {
-        this.bot.sendMessage(chatId, `-.-.-00-.-.-
+        this.sendMessage(chatId, `-.-.-00-.-.-
 >>> OCToPUS <<<<
 -.-.-00-.-.-`);
         return;
@@ -36,7 +38,7 @@ class Telegram {
       var chatId = message.chat.id;
 
       if(this.octopus.conf.telegram.admins.indexOf(message.from.username)<0) {
-        this.bot.sendMessage(chatId, `-.-.-00-.-.-
+        this.sendMessage(chatId, `-.-.-00-.-.-
 >>> OCToPUS <<<<
 -.-.-00-.-.-`);
         return;
@@ -47,16 +49,16 @@ class Telegram {
 
           this.octopus.nodes.forEach(node => {
 
-            this.bot.sendMessage(chatId, `Uploading ${message.document.file_name} to ${node.name}...`);
+            this.sendMessage(chatId, `Uploading ${message.document.file_name} to ${node.name}...`);
             node.putFile(filePath, message.document.file_name, (err) => {
               if(err) {
-                this.bot.sendMessage(chatId, `Error trying to upload ${message.document.file_name} to ${node.name}`);
+                this.sendMessage(chatId, `Error trying to upload ${message.document.file_name} to ${node.name}`);
               }
             });
 
           });
 
-          this.bot.sendMessage(chatId, "-.-.-00-.-.-");
+          this.sendMessage(chatId, "-.-.-00-.-.-");
 
         });
 
@@ -67,7 +69,7 @@ class Telegram {
       var chatId = message.chat.id;
 
       if(this.octopus.conf.telegram.admins.indexOf(message.from.username)<0) {
-        this.bot.sendMessage(chatId, `-.-.-00-.-.-
+        this.sendMessage(chatId, `-.-.-00-.-.-
 >>> OCToPUS <<<<
 -.-.-00-.-.-`);
         return;
@@ -78,6 +80,12 @@ class Telegram {
       this.interpreter(chatId, text, message);
     });
 
+  }
+
+  sendMessage(chatId, text, options) {
+    return this.bot.sendMessage(chatId,
+      text,
+      Object.assign({}, this.defaultSendOptions, options));
   }
 
   sendQuestion(chatId, question, callback) {
@@ -157,7 +165,7 @@ class Telegram {
       res += `\nTotal of ${processTotal} process(es) runnning\n`;
 
       res += "\nNodes list ends -.-.-00-.-.-\n"
-      this.bot.sendMessage(chatId, res)
+      this.sendMessage(chatId, res);
 
     });
 
@@ -172,7 +180,7 @@ class Telegram {
           })
         }
       };
-      this.bot.sendMessage(chatId, 'Get info from:', options);
+      this.sendMessage(chatId, 'Get info from:', options);
 
     });
 
@@ -199,7 +207,7 @@ class Telegram {
         }
       });
 
-      this.bot.sendMessage(chatId, res)
+      this.sendMessage(chatId, res)
 
     });
 
@@ -207,37 +215,18 @@ class Telegram {
     ocu.match(/execNode$/g, text, (match) => {
 
       this.bot.sendChatAction(chatId, "typing");
-      var options = {
-        reply_markup: {
-          force_reply: true
-        }
-      };
-      this.bot.sendMessage(chatId, 'Enter the list of nodes (Comma separated)\n* = All nodes\nExample: node1,node2', options)
-        .then((sended) => {
-          var sChatId = sended.chat.id;
-          var sMessageId = sended.message_id;
-          this.bot.onReplyToMessage(sChatId, sMessageId, (message) => {
+      this.sendQuestion(chatId, 'Enter the list of nodes (Comma separated)\n* = All nodes\nExample: node1,node2', text => {
 
-            var sText = message.text.replace(/,\s+/g, ",");
-            ocu.match(/[-\w,\*]+/g, message.text, (match) => {
+        var sText = text.replace(/,\s+/g, ",");
+        ocu.match(/[-\w,\*]+/g, sText, (match) => {
 
-              this.bot.sendMessage(chatId, 'Enter the command', options)
-                .then((sended) => {
-
-                  var ssChatId = sended.chat.id;
-                  var ssMessageId = sended.message_id;
-                  this.bot.onReplyToMessage(ssChatId, ssMessageId, (message) => {
-
-                    this.interpreter(chatId, `exec ${sText} ${message.text}`);
-
-                  });
-
-                });
-
-            });
-
+          this.sendQuestion(chatId, 'Enter the command', text => {
+            this.interpreter(chatId, `exec ${sText} ${text}`);
           });
+
         });
+
+      });
 
     });
 
@@ -257,7 +246,7 @@ class Telegram {
 
       });
 
-      this.bot.sendMessage(chatId, "-.-.-00-.-.-");
+      this.sendMessage(chatId, "-.-.-00-.-.-");
 
     });
 
@@ -274,7 +263,7 @@ class Telegram {
           ]
         }
       };
-      this.bot.sendMessage(chatId, 'Read logs from:', options);
+      this.sendMessage(chatId, 'Read logs from:', options);
 
     });
 
@@ -294,7 +283,7 @@ class Telegram {
             var res = `Reading logs: ${node.name} -.-.-00-.-.-\n\n`;
             res += data;
             res += `\nReading logs ends: ${node.name} -.-.-00-.-.-\n\n`;
-            this.bot.sendMessage(chatId, res);
+            this.sendMessage(chatId, res);
           });
 
         }
@@ -307,37 +296,18 @@ class Telegram {
     ocu.match(/downloadNode$/g, text, (match) => {
 
       this.bot.sendChatAction(chatId, "typing");
-      var options = {
-        reply_markup: {
-          force_reply: true
-        }
-      };
-      this.bot.sendMessage(chatId, 'Enter the list of nodes (Comma separated)\n* = All nodes\nExample: node1,node2', options)
-        .then((sended) => {
-          var sChatId = sended.chat.id;
-          var sMessageId = sended.message_id;
-          this.bot.onReplyToMessage(sChatId, sMessageId, (message) => {
+      this.sendQuestion(chatId, 'Enter the list of nodes (Comma separated)\n* = All nodes\nExample: node1,node2', text => {
 
-            var sText = message.text.replace(/,\s+/g, ",");
-            ocu.match(/[-\w,\*]+/g, message.text, (match) => {
+        var sText = text.replace(/,\s+/g, ",");
+        ocu.match(/[-\w,\*]+/g, text, (match) => {
 
-              this.bot.sendMessage(chatId, 'Enter the file path', options)
-                .then((sended) => {
-
-                  var ssChatId = sended.chat.id;
-                  var ssMessageId = sended.message_id;
-                  this.bot.onReplyToMessage(ssChatId, ssMessageId, (message) => {
-
-                    this.interpreter(chatId, `download ${sText} ${message.text}`);
-
-                  });
-
-                });
-
-            });
-
+          this.sendQuestion(chatId, 'Enter the file path', text => {
+            this.interpreter(chatId, `download ${sText} ${text}`);
           });
+
         });
+
+      });
 
     });
 
@@ -353,13 +323,13 @@ class Telegram {
         if(all || names.indexOf(node.name)>=0) {
 
           this.bot.sendChatAction(chatId, "upload_document");
-          this.bot.sendMessage(chatId, `Downloading ${filePath} from ${node.name}...`);
+          this.sendMessage(chatId, `Downloading ${filePath} from ${node.name}...`);
           var parsed = path.parse(filePath);
           var dst = `${this.octopus.nodesDir}/data/${parsed.name}_${node.name}${parsed.ext}`;
           node.getFile(filePath, dst, (err) => {
 
             if(err) {
-              this.bot.sendMessage(chatId, `Error downloading ${filePath} from ${node.name}...`);
+              this.sendMessage(chatId, `Error downloading ${filePath} from ${node.name}...`);
               return;
             }
             this.bot.sendDocument(chatId, dst, {
@@ -387,7 +357,7 @@ class Telegram {
           ]
         }
       };
-      this.bot.sendMessage(chatId, 'Kill process from:', options);
+      this.sendMessage(chatId, 'Kill process from:', options);
 
     });
 
@@ -407,7 +377,7 @@ class Telegram {
               })
             }
           };
-          this.bot.sendMessage(chatId, 'Choose the process:', options);
+          this.sendMessage(chatId, 'Choose the process:', options);
 
         }
       });
@@ -427,10 +397,10 @@ class Telegram {
             if(process.id == match[2]) {
               process.interrupt();
               process.kill();
-              this.bot.sendMessage(chatId, `Killing process #${process.id} from ${node.name}`);
+              this.sendMessage(chatId, `Killing process #${process.id} from ${node.name}`);
             }
           });
-          this.bot.sendMessage(chatId, '-.-.-00-.-.-');
+          this.sendMessage(chatId, '-.-.-00-.-.-');
 
         }
       });
@@ -442,29 +412,19 @@ class Telegram {
 
       this.bot.sendChatAction(chatId, "typing");
 
-      var options = {
-        reply_markup: {
-          force_reply: true
-        }
-      };
-      this.bot.sendMessage(chatId, 'Enter the username of the new admin', options)
-        .then((sended) => {
-          var sChatId = sended.chat.id;
-          var sMessageId = sended.message_id;
-          this.bot.onReplyToMessage(sChatId, sMessageId, (message) => {
+      this.sendQuestion(chatId, 'Enter the username of the new admin', text => {
 
-            ocu.match(/([-\w]+)/g, message.text, (match) => {
+        ocu.match(/([-\w]+)/g, text, (match) => {
 
-              var username = match[1];
-              this.octopus.conf.telegram.admins.push(username);
-              this.octopus.save(() => {
-                this.bot.sendMessage(chatId, 'New admin added!');
-              });
-
-            });
-
+          var username = match[1];
+          this.octopus.conf.telegram.admins.push(username);
+          this.octopus.save(() => {
+            this.sendMessage(chatId, 'New admin added!');
           });
+
         });
+
+      });
 
     });
 
@@ -494,9 +454,9 @@ class Telegram {
               this.octopus.nodes.push(new Node(options));
               this.octopus.save((err) => {
                 if(err) {
-                  this.bot.sendMessage(chatId, "Error while trying to save conf");
+                  this.sendMessage(chatId, "Error while trying to save conf");
                 } else {
-                  this.bot.sendMessage(chatId, "-.-.-00-.-.-");
+                  this.sendMessage(chatId, "-.-.-00-.-.-");
                 }
               });
 
@@ -514,7 +474,7 @@ class Telegram {
     ocu.match(/help$/g, text, (match) => {
 
       this.bot.sendChatAction(chatId, "typing");
-      this.bot.sendMessage(chatId, this.help());
+      this.sendMessage(chatId, this.help());
     });
 
   } // END INTERPRETER

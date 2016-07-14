@@ -96,7 +96,7 @@ class Process {
         stream.on('close', (code, signal) => {
 
           this.status = Status.EXITED;
-          this.exitCode = code || `S(${signal})`;
+          this.exitCode = (code!="" || code==0) ? `RET(${code})` : `S(${signal})`;
           this.stdout.write(`-.-.-00-.-.- ${this.cmd} END ${this.exitCode} -.-.-00-.-.-\n`);
           this.stderr.write(`-.-.-00-.-.- ${this.cmd} END ${this.exitCode} -.-.-00-.-.-\n`);
           this.ssh.end();
