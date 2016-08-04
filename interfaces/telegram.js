@@ -258,13 +258,14 @@ class Telegram {
     ocu.match(/logsNode$/g, text, (match) => {
 
       this.bot.sendChatAction(chatId, "typing");
+
+      var buttons = this.octopus.nodes.map((node) => {
+        return [ { text: node.name, callback_data: `/logs ${node.name}` } ];
+      });
+
       var options = {
         reply_markup: {
-          inline_keyboard: [
-            this.octopus.nodes.map((node) => {
-              return { text: node.name, callback_data: `/logs ${node.name}` };
-            })
-          ]
+          inline_keyboard: buttons
         }
       };
       this.sendMessage(chatId, 'Read logs from:', options);
@@ -285,7 +286,6 @@ class Telegram {
           fs.readFile(`${this.octopus.nodesDir}/${node.name}.out`, (err, data) => {
             if (err) console.log(err);;
             var res = `Reading logs: ${node.name} -.-.-00-.-.-\n\n`;
-            console.log(data);
             res += (`${data}`).substr(Math.max(data.length-400, 0), data.length);
             res += `\nReading logs ends: ${node.name} -.-.-00-.-.-\n\n`;
             this.sendMessage(chatId, res);
